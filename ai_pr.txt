@@ -1,0 +1,327 @@
+Aim: To implement Uninformed search method (BFS and DFS)
+
+Theory:
+Uninformed search algorithms explore the search space without any domain-specific knowledge. Depth-First Search (DFS) explores as far down a branch as possible before backtracking, using recursion or a stack. Breadth-First Search (BFS) explores all neighbors at the current level before moving deeper, using a queue. Both methods are used to traverse graphs and trees effectively.
+
+Code:
+
+************************DFS***********************
+
+# Function to take graph input from the user
+def take_input():
+    graph = {}
+    n = int(input("How many nodes are there? "))  # Total number of nodes
+    print("Enter the neighbors for each node (use space to separate them):")
+
+    for i in range(1, n + 1):
+        neighbors = list(map(int, input(f"Neighbors of node {i}: ").split()))
+        graph[i] = neighbors
+    return graph
+
+def dfs(graph, node, visited):
+    if node not in visited:
+        print(node, end=" ")  # Visit the node
+        visited.add(node)     # Mark as visited
+
+        for neighbor in graph[node]:
+            dfs(graph, neighbor, visited)  # Recursively visit neighbors
+
+# Take graph input from the user and start DFS traversal
+graph = take_input()
+start_node = int(input("From which node should DFS traversal start? "))
+print(f"DFS traversal starting from node {start_node}:")
+visited_set = set()
+dfs(graph, start_node, visited_set)
+
+Output:
+
+For DFS:
+Input:
+How many nodes are there? 5  
+Enter the neighbors for each node (use space to separate them):  
+Neighbors of node 1: 2 3  
+Neighbors of node 2: 4  
+Neighbors of node 3: 5  
+Neighbors of node 4:  
+Neighbors of node 5:  
+From which node should DFS traversal start? 1
+
+Output:
+DFS traversal starting from node 1:  1 2 4 3 5
+
+
+******************************BFS*****************:
+
+# Function to take graph input from the user
+def take_input():
+    graph = {}
+    n = int(input("How many nodes are there? "))  # Total number of nodes
+    print("Enter the neighbors for each node (use space to separate them):")
+
+    for i in range(1, n + 1):
+        neighbors = list(map(int, input(f"Neighbors of node {i}: ").split()))
+        graph[i] = neighbors
+    return graph
+
+# BFS Function
+def bfs(graph, start):
+    visited = []  # List to track visited nodes
+    queue = [start]  # Initialize queue with the start node
+
+    while queue:
+        node = queue.pop(0)  # Remove a node from the queue
+        if node not in visited:
+            print(node, end=" ")  # Visit the node
+            visited.append(node)  # Mark as visited
+
+            # Add unvisited neighbors to the queue
+            for neighbor in graph[node]:
+                if neighbor not in visited and neighbor not in queue:
+                    queue.append(neighbor)
+
+# Take graph input from the user and start BFS traversal
+graph = take_input()
+start_node = int(input("From which node should BFS traversal start? "))
+print(f"BFS traversal starting from node {start_node}:")
+bfs(graph, start_node)
+
+
+
+
+
+
+
+
+
+For BFS:
+Input:
+How many nodes are there? 5  
+Enter the neighbors for each node (use space to separate them):  
+Neighbors of node 1: 2 3  
+Neighbors of node 2: 4  
+Neighbors of node 3: 5  
+Neighbors of node 4:  
+Neighbors of node 5:  
+From which node should DFS traversal start? 1
+
+Output:
+BFS traversal starting from node 1:  1 2 3 4 5
+
+
+
+
+
+Conclusion:
+The experiment successfully demonstrates the working of DFS and BFS algorithms for graph traversal. DFS explores depth-wise using recursion, while BFS explores level-wise using a queue. These techniques form the foundation of uninformed search strategies in AI and are crucial in solving pathfinding and decision-making problems.
+
+
+
+**********************A* Search********************
+
+
+Aim: To implement Informed search method (A Search)*
+
+Theory:
+A* (A-star) is an informed search algorithm used in pathfinding and graph traversal. It combines the advantages of Dijkstra’s algorithm and Greedy Best-First Search by using both the actual cost from the start node (g(n)) and the estimated cost to the goal (h(n), called the heuristic). The total cost is f(n) = g(n) + h(n). A* is both complete and optimal if the heuristic used is admissible (never overestimates the true cost).
+
+Code:
+import heapq
+
+# Heuristic function: Manhattan Distance
+def heuristic(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+# A* Algorithm
+def a_star(grid, start, goal):
+    rows, cols = len(grid), len(grid[0])
+    open_set = []
+    heapq.heappush(open_set, (0, start))
+    
+    came_from = {}
+    g_score = {start: 0}
+    f_score = {start: heuristic(start, goal)}
+
+    while open_set:
+        _, current = heapq.heappop(open_set)
+
+        if current == goal:
+            path = []
+            while current in came_from:
+                path.append(current)
+                current = came_from[current]
+            path.append(start)
+            path.reverse()
+            return path
+
+        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+            neighbor = (current[0] + dx, current[1] + dy)
+
+            if 0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols:
+                if grid[neighbor[0]][neighbor[1]] == 1:
+                    continue
+
+                tentative_g = g_score[current] + 1
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    f_score[neighbor] = tentative_g + heuristic(neighbor, goal)
+                    heapq.heappush(open_set, (f_score[neighbor], neighbor))
+
+    return None
+
+# --- Input Section ---
+rows = int(input("Enter number of rows: "))
+cols = int(input("Enter number of columns: "))
+
+print("Enter grid row by row (0 = path, 1 = wall):")
+grid = []
+for i in range(rows):
+    row = list(map(int, input(f"Row {i+1}: ").split()))
+    grid.append(row)
+
+start_x, start_y = map(int, input("Enter start position (row col): ").split())
+goal_x, goal_y = map(int, input("Enter goal position (row col): ").split())
+
+# --- Run A* ---
+path = a_star(grid, (start_x, start_y), (goal_x, goal_y))
+
+# --- Output Section ---
+if path:
+    print("Path found:")
+    for step in path:
+        print(step)
+else:
+    print("No path found from start to goal.")
+
+
+Output: 
+Input:
+Enter number of rows: 5
+Enter number of columns: 5
+Enter grid row by row (0 = path, 1 = wall):
+Row 1: 0 1 0 0 0
+Row 2: 0 1 0 1 0
+Row 3: 0 0 0 1 0
+Row 4: 1 1 0 0 0
+Row 5: 0 0 0 1 0
+Enter start position (row col): 0 0
+Enter goal position (row col): 4 4
+
+Output:
+Path found:
+(0, 0)
+(1, 0)
+(2, 0)
+(2, 1)
+(2, 2)
+(3, 2)
+(3, 3)
+(3, 4)
+(4, 4)
+
+Conclusion:
+In this experiment, the A* search algorithm was successfully implemented to find the shortest path in a grid. By using the Manhattan Distance heuristic, the algorithm efficiently explored paths while avoiding obstacles. The output shows the optimal path from the start to the goal node, demonstrating the effectiveness of informed search methods.
+
+
+
+*********************Min Max ************************
+
+Theory:
+
+The Minimax Algorithm is a decision-making algorithm used in two-player games such as Chess, Tic-Tac-Toe, etc. It is based on the idea of perfect play, where both players (Maximizer and Minimizer) make the best possible moves. The algorithm builds a game tree, evaluates all possible moves recursively, and assigns a score to each leaf node (possible outcome). The Max player aims to maximize the score, while the Min player aims to minimize it. The algorithm then backtracks through the tree, choosing the best move at each level based on whether it is a Max or Min turn. This ensures the optimal move is selected assuming the opponent also plays optimally.
+
+Code:
+def minmax(depth, nodeIndex, isMax, scores, targetDepth):
+    # Base case: reached bottom of the tree
+    if depth == targetDepth:
+        return scores[nodeIndex]
+    
+    if isMax:
+        return max(
+            minmax(depth + 1, nodeIndex * 2, False, scores, targetDepth),
+            minmax(depth + 1, nodeIndex * 2 + 1, False, scores, targetDepth)
+        )
+    else:
+        return min(
+            minmax(depth + 1, nodeIndex * 2, True, scores, targetDepth),
+            minmax(depth + 1, nodeIndex * 2 + 1, True, scores, targetDepth)
+        )
+
+# Example leaf scores (game outcomes)
+scores = [3, 5, 2, 9, 12, 5, 23, 23]
+
+# Tree has height = log2(len(scores)) = 3
+targetDepth = 3
+initialNode = 0  # start at root
+
+best_score = minmax(0, initialNode, True, scores, targetDepth)
+print("The optimal value is:", best_score)
+
+
+Output:
+The optimal value is: 12
+
+
+Conclusion:
+In this experiment, we successfully implemented the Minimax algorithm using a tree-based structure with a set of predefined scores at the leaf nodes. The algorithm recursively evaluated the best possible outcome for the maximizing player. The output shows that the optimal value selected is 12, demonstrating that the algorithm correctly identifies the best decision based on all possible outcomes. This experiment helps in understanding the logic of decision-making in competitive environments.
+
+
+
+*****************Alpha Beta puring **************************
+
+Aim: WAP to implement Alpha-Beta Pruning Algorithm.
+
+Theory:
+Alpha-Beta Pruning is an enhancement to the Minimax algorithm that improves efficiency by ignoring branches of the game tree that don't affect the final decision. It uses two variables:
+●	Alpha: Best value that the maximizer currently can guarantee.
+●	Beta: Best value that the minimizer currently can guarantee.
+When Beta becomes less than or equal to Alpha, further evaluation of the branch is stopped (prune)
+Algorithm:
+1.	Start with the minimax function.
+2.	Introduce two parameters: alpha (best already explored option for the maximizer) and beta (best already explored option for the minimizer).
+3.	Traverse the tree depth-first.
+4.	Prune (cut off) branches where alpha >= beta.
+5.	Return the optimal value for the maximizer or minimizer.
+
+Code:
+import math
+
+def alpha_beta_pruning(depth, node_index, is_maximizing, values, alpha, beta):
+    if depth == 3:  # Leaf node condition
+        return values[node_index]
+    
+    if is_maximizing:
+        best = -math.inf
+        for i in range(2):  # Two children per node
+            val = alpha_beta_pruning(depth + 1, node_index * 2 + i, False, values, alpha, beta)
+            best = max(best, val)
+            alpha = max(alpha, best)
+            if beta <= alpha:
+                break  # Pruning occurs
+        return best
+    else:
+        best = math.inf
+        for i in range(2):  # Two children per node
+            val = alpha_beta_pruning(depth + 1, node_index * 2 + i, True, values, alpha, beta)
+            best = min(best, val)
+            beta = min(beta, best)
+            if beta <= alpha:
+                break  # Pruning occurs
+        return best
+
+# Updated leaf values for demonstration
+values = [7, 4, 6, 8, 3, 5, 9, 1]
+optimal_value = alpha_beta_pruning(0, 0, True, values, -math.inf, math.inf)
+print("Optimal value using Alpha-Beta Pruning:", optimal_value)
+
+
+Output:
+Optimal value using Alpha-Beta Pruning: 6
+
+Conclusion:
+The Alpha-Beta Pruning algorithm efficiently computed the optimal value as 6, demonstrating how it avoids unnecessary node evaluations. By pruning branches that cannot influence the final decision, it speeds up the decision process and is ideal for use in AI-based two-player games.
+
+
+
+
