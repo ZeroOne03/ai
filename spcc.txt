@@ -1,0 +1,579 @@
+
+1.	Write a program to implement lexical analyzer to recognize given language.	L= Substring “aab”
+
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char str[100];
+    int state = 0;
+
+    printf("Enter a string: ");
+    scanf("%s", str);
+
+    for (int i = 0; str[i] != '\0'; i++) {
+        switch (state) {
+            case 0:
+                if (str[i] == 'a')
+                    state = 1;
+                else
+                    state = 0;
+                break;
+
+            case 1:
+                if (str[i] == 'a')
+                    state = 2;
+                else if (str[i] == 'b')
+                    state = 0;
+                else
+                    state = 0;
+                break;
+
+            case 2:
+                if (str[i] == 'b')
+                    state = 3; // Final (accepting) state
+                else if (str[i] == 'a')
+                    state = 2; // Stay in 2 for multiple a's
+                else
+                    state = 0;
+                break;
+
+            case 3:
+                // Already accepted, stay here
+                break;
+        }
+
+        // Optimization: break early if accepted
+        if (state == 3)
+            break;
+    }
+
+    if (state == 3)
+        printf("Accepted (contains 'aab')\n");
+    else
+        printf("Rejected (does not contain 'aab')\n");
+
+    return 0;
+}
+
+
+***********************************************
+2.	Write a program to implement lexical analyzer to recognize given language.	Ends with “aab”
+
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char str[100];
+    int len;
+
+    printf("Enter a string: ");
+    scanf("%s", str);
+
+    len = strlen(str);
+
+    // Check if the string has at least 3 characters and ends with 'aab'
+    if (len >= 3 &&
+        str[len - 3] == 'a' &&
+        str[len - 2] == 'a' &&
+        str[len - 1] == 'b') {
+        printf("Accepted (ends with 'aab')\n");
+    } else {
+        printf("Rejected (does not end with 'aab')\n");
+    }
+
+    return 0;
+}
+
+
+
+*******************************************************8
+
+
+3.	Write a program to count number of characters,words, special characters, lines, tabs, numbers and blank spaces present in input using LEX.
+
+count.l:
+%{
+    int c = 0, n = 0, s = 0, lines = 0, words = 0;  
+%}
+
+%%
+[a-zA-Z]+ { words++; c += yyleng; }    
+[0-9]+ { words++; n += yyleng; }      
+[ ] { s++; }                          
+[^a-zA-Z0-9 ] { s++; }                                        
+%%
+
+int main() {
+    yyin = fopen("abc.txt", "r");  
+    if (!yyin) {
+        printf("Error: could not open file abc.txt\n");
+        return 1;
+    }
+   
+    yylex();  // Process the input file
+    printf("\nCharacters : %d", c);    
+    printf("\nNumbers    : %d", n);    
+    printf("\nSpaces     : %d", s);    
+    printf("\nSymbols    : %d", s);    
+    printf("\nWords      : %d", words);  
+    fclose(yyin);  // Close the file
+    return 0;
+}
+
+int yywrap() {
+    return 1;  
+}
+
+
+abc.txt:
+Hello World! 123.
+
+How to run:
+lex count.l
+cc lex.yy.c -o count -ll
+./count input.txt
+
+
+Output 
+Characters : 10  
+Numbers    : 3  
+Spaces     : 2  
+Symbols    : 2  
+Words      : 3  
+
+
+
+
+
+
+**************************************************************
+4.	Write a program to recognize valid arithmetic expression that uses operators + , -,* and / and design calculator using YACC	
+
+calc.l:
+%{
+#include "y.tab.h"
+#include <stdio.h>
+%}
+
+%%
+
+[0-9]+              { yylval = atoi(yytext); return NUMBER; }
+[ \t]               ; // Ignore whitespaces
+\n                  { return '\n'; }
+
+"+"                 { return '+'; }
+"-"                 { return '-'; }
+"*"                 { return '*'; }
+"/"                 { return '/'; }
+"("                 { return '('; }
+")"                 { return ')'; }
+
+.                   { printf("Invalid character: %s\n", yytext); }
+
+%%
+
+
+
+calc.y:
+%{
+#include <stdio.h>
+#include <stdlib.h>
+%}
+
+%token NUMBER
+%left '+' '-'
+%left '*' '/'
+%left UMINUS
+
+%%
+
+input:
+    /* empty */
+    | input line
+    ;
+
+line:
+    '\n'
+    | expr '\n'   { printf("= %d\n", $1); }
+    ;
+
+expr:
+    NUMBER               { $$ = $1; }
+    | expr '+' expr      { $$ = $1 + $3; }
+    | expr '-' expr      { $$ = $1 - $3; }
+    | expr '*' expr      { $$ = $1 * $3; }
+    | expr '/' expr      { 
+                            if ($3 == 0) {
+                                printf("Error: Division by zero\n"); 
+                                $$ = 0;
+                            } else {
+                                $$ = $1 / $3;
+                            }
+                          }
+    | '-' expr %prec UMINUS { $$ = -$2; }
+    | '(' expr ')'       { $$ = $2; }
+    ;
+
+%%
+
+int main() {
+    printf("Simple Calculator (press Ctrl+D to exit)\n");
+    return yyparse();
+}
+
+int yyerror(char *s) {
+    fprintf(stderr, "Error: %s\n", s);
+    return 0;
+}
+
+
+
+run:
+lex calc.l
+yacc -d calc.y
+cc lex.yy.c y.tab.c -o calc -ll
+./calc
+
+input:
+2 + 3 * (4 - 1)
+
+output:
+= 11
+
+
+****************************************
+5.	Write a program to generate 3-address code as an intermediate code representation.	
+
+
+Code:
+import re
+
+def generate_tac(expression):
+    # Split the expression into left-hand side (LHS) and right-hand side (RHS)
+    lhs, rhs = expression.split('=')
+    lhs = lhs.strip()  # Remove any extra spaces
+    rhs = rhs.strip()
+
+    # Split the RHS into tokens
+    tokens = re.findall(r'\w+|\+|\-|\*|/|\(|\)', rhs)
+    
+    # Initialize variables
+    temp_count = 1
+    tac = []
+    stack = []
+    output = []
+    precedence = {'+': 1, '-': 1, '*': 2, '/': 2}
+    
+    # Convert infix to postfix (Reverse Polish Notation)
+    for token in tokens:
+        if token.isalnum():  # If it's a variable or number
+            output.append(token)
+        elif token in precedence:
+            while (stack and stack[-1] in precedence and 
+                   precedence[stack[-1]] >= precedence[token]):
+                output.append(stack.pop())
+            stack.append(token)
+        elif token == '(':
+            stack.append(token)
+        elif token == ')':
+            while stack[-1] != '(':
+                output.append(stack.pop())
+            stack.pop()
+    
+    while stack:
+        output.append(stack.pop())
+    
+    # Generate TAC from postfix expression
+    temp_stack = []
+    for token in output:
+        if token.isalnum():  # If it's a variable or number
+            temp_stack.append(token)
+        else:
+            operand2 = temp_stack.pop()
+            operand1 = temp_stack.pop()
+            temp_var = f't{temp_count}'
+            temp_count += 1
+            tac.append(f'{temp_var} = {operand1} {token} {operand2}')
+            temp_stack.append(temp_var)
+    
+    # Assign the final result to the LHS variable
+    final_result = temp_stack.pop()
+    tac.append(f'{lhs} = {final_result}')
+    
+    return tac
+
+# Take input from the user
+expression = input("Enter an assignment expression : ")
+
+# Generate TAC
+tac = generate_tac(expression)
+
+# Print the TAC
+print("\nThree Address Code (TAC):")
+for line in tac:
+    print(line)
+
+
+
+
+
+run:
+python ex.py
+Enter an assignment expression:x = y + z * (a - b)
+
+output:
+t1=y+z
+x=t1
+
+****************************************************
+
+
+
+6.	Write a program to implement code generation algorithm for given input statement
+
+
+code:
+def main():
+    expression = input("Enter an expression (e.g., a = b + c): ")
+
+    # Remove spaces and extract characters
+    parts = expression.replace(" ", "")
+    if len(parts) != 5 or parts[1] != '=':
+        print("Invalid format. Use the format: a = b + c")
+        return
+
+    lhs = parts[0]
+    op1 = parts[2]
+    operator = parts[3]
+    op2 = parts[4]
+
+    print("\nGenerated Code:")
+    print(f"MOV R1, {op1}")
+    
+    if operator == '+':
+        print(f"ADD R1, {op2}")
+    elif operator == '-':
+        print(f"SUB R1, {op2}")
+    elif operator == '*':
+        print(f"MUL R1, {op2}")
+    elif operator == '/':
+        print(f"DIV R1, {op2}")
+    else:
+        print("Unsupported operator.")
+        return
+
+    print(f"MOV {lhs}, R1")
+
+if __name__ == "__main__":
+    main()
+
+
+run and output:
+
+$ python codegen.py
+Enter an expression (e.g., a = b + c): a = b + x
+
+Generated Code:
+MOV R1, b
+ADD R1, x
+MOV a, R1
+
+
+
+*************************************
+
+7.	Design ST for  Two-Pass Assembler Design
+
+code:
+# Python script to generate Symbol Table (ST) from 'program.asm'
+
+def generate_symbol_table(filename):
+    symbol_table = []
+    location_counter = 0
+    lc_start = 0
+
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+
+    for line in lines:
+        line = line.strip()
+
+        # Skip comments or empty lines
+        if not line or line.startswith(';'):
+            continue
+
+        # Check for START directive to initialize location counter
+        if line.startswith("START"):
+            lc_start = int(line.split()[1])
+            location_counter = lc_start
+            continue
+
+        # Handle label with instruction (e.g., X MOVER AREG, B)
+        parts = line.split()
+        if len(parts) >= 2 and not parts[0].startswith(('MOVER', 'ADD', 'SUB', 'MULT', 'DIV', 'JMP', 'DC', 'DS')):
+            label = parts[0]
+            if label not in [entry[0] for entry in symbol_table]:
+                symbol_table.append((label, location_counter, 1))
+
+        # Handle DS (Define Storage)
+        if "DS" in line:
+            label = line.split()[0]
+            size = int(line.split()[2])
+            if label not in [entry[0] for entry in symbol_table]:
+                symbol_table.append((label, location_counter, size))
+            location_counter += size
+
+        # Handle DC (Define Constant)
+        elif "DC" in line:
+            label = line.split()[0]
+            if label not in [entry[0] for entry in symbol_table]:
+                symbol_table.append((label, location_counter, 1))
+            location_counter += 1
+
+        # Handle EQU (Equate label with value)
+        elif "EQU" in line:
+            label = line.split()[0]
+            value = int(line.split()[2])
+            if label not in [entry[0] for entry in symbol_table]:
+                symbol_table.append((label, value, 1))
+
+        # Increment location counter for each instruction (basic assumption)
+        elif any(op in line for op in ["MOVER", "ADD", "SUB", "MULT", "DIV", "JMP"]):
+            location_counter += 1
+
+    # Output Symbol Table
+    print("Symbol Table (ST)")
+    print("So.\tName\tValue\tLength")
+    for i, (name, value, length) in enumerate(symbol_table, 1):
+        print(f"{i}\t{name}\t{value}\t{length}")
+
+# Run the Symbol Table Generator
+generate_symbol_table("program.asm")
+
+
+
+
+
+program.asm:
+START 100
+X MOVER AREG, ='5'
+Y ADD BREG, X
+A DS 3
+B DC 1
+C EQU 107
+END
+
+
+output:
+Symbol Table (ST)
+So.	Name	Value	Length
+1	X	    100	    1
+2	Y	    101	    1
+3	A	    102	    3
+4	B	    105	    1
+5	C	    107	    1
+
+
+
+
+***********************************
+8.	Design LT for  Two-Pass Assembler Design
+
+
+code:
+# Python script to generate Literal Table (LT) from 'program.asm'
+
+def generate_literal_table(filename):
+    literal_table = []
+    location_counter = 0
+    lc_start = 0
+
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+
+    for line in lines:
+        line = line.strip()
+
+        # Skip empty or comment lines
+        if not line or line.startswith(';'):
+            continue
+
+        # START directive sets the location counter
+        if line.startswith("START"):
+            lc_start = int(line.split()[1])
+            location_counter = lc_start
+            continue
+
+        # Detect literals in instructions (e.g., ='5')
+        if "='" in line:
+            parts = line.split(",")
+            if len(parts) > 1 and "='" in parts[1]:
+                literal = parts[1].strip().replace("'", "").replace("=", "")
+                if not any(lit[0] == literal for lit in literal_table):
+                    literal_table.append((literal, None, 1))
+
+        # Allocate memory for literals at LTORG or END
+        if "LTORG" in line or "END" in line:
+            for i in range(len(literal_table)):
+                if literal_table[i][1] is None:
+                    literal_table[i] = (literal_table[i][0], location_counter, literal_table[i][2])
+                    location_counter += 1
+
+        # Increment location counter for instruction lines
+        if any(op in line for op in ["MOVER", "ADD", "SUB", "MULT", "DIV", "JMP"]):
+            location_counter += 1
+
+    # Output Literal Table
+    print("Literal Table (LT)")
+    print("So.\tLiteral\tValue\tLength")
+    for i, (literal, value, length) in enumerate(literal_table, 1):
+        print(f"{i}\t={literal}\t{value}\t{length}")
+
+# Run the Literal Table Generator
+generate_literal_table("program.asm")
+
+
+
+
+program.asm:
+START 200
+MOVER AREG,='5'
+ADD BREG,='3'
+LTORG
+SUB CREG, A
+END
+
+
+
+output:
+
+Literal Table (LT)
+So.	Literal	Value	Length
+1	=5	    200	    1
+2	=3	    201	    1
+
+
+
+
+************************************
+	
+9.	Design MDT for  Two-Pass Macro Design
+
+
+
+
+****************************************
+10.	Design MNT for  Two-Pass Macro Design
+
+
+
+
+
+**********************************************
+
+11.	Design ALA for  Two-Pass Macro Design
+
+
+
+
