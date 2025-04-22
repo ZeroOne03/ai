@@ -576,4 +576,124 @@ So.	Literal	Value	Length
 
 
 
+mdt = []
+mnt = []
+ala = []
+
+def search_ala(arg):
+    if arg in ala:
+        return ala.index(arg)
+    ala.append(arg)
+    return len(ala) - 1
+
+def process_macro():
+    global mdt, mnt, ala
+
+    line = input("Enter macro header (e.g., MACRO MACRO_NAME &ARG1,&ARG2): ").strip()
+    tokens = line.split()
+
+    if len(tokens) < 2:
+        print("Invalid macro header.")
+        return
+
+    macro_name = tokens[1]
+    mnt.append({
+        'name': macro_name,
+        'mdt_index': len(mdt)
+    })
+
+    if len(tokens) > 2:
+        args = tokens[2].split(',')
+        for arg in args:
+            search_ala(arg.strip())
+
+    print("Enter macro body line by line (use 'MEND' to end):")
+    while True:
+        line = input()
+        if line.strip() == 'MEND':
+            mdt.append("MEND")
+            break
+
+        parts = line.strip().split()
+        new_line = []
+        for part in parts:
+            if part.startswith('&'):
+                idx = search_ala(part)
+                new_line.append(f"#{idx}")
+            else:
+                new_line.append(part)
+        mdt.append(" ".join(new_line))
+
+def print_mnt():
+    print("\nMNT (Macro Name Table):")
+    print("Name\tMDT Index")
+    for entry in mnt:
+        print(f"{entry['name']}\t{entry['mdt_index']}")
+
+def print_mdt():
+    print("\nMDT (Macro Definition Table):")
+    print("Index\tInstruction")
+    for index, line in enumerate(mdt):
+        print(f"{index}\t{line}")
+
+def print_ala():
+    print("\nALA (Argument List Array):")
+    for index, arg in enumerate(ala):
+        print(f"#{index}\t{arg}")
+
+def main():
+    macros = int(input("Enter number of macros to define: "))
+    for _ in range(macros):
+        process_macro()
+    print_mnt()
+    print_mdt()
+    print_ala()
+
+if __name__ == "__main__":
+    main()
+
+'''
+input
+Enter number of macros to define: 1
+Enter macro header (e.g., MACRO MACRO_NAME &ARG1,&ARG2): MACRO ADD &A,&B
+Enter macro body line by line (use 'MEND' to end):
+MOV &A, R1
+ADD &B, R1
+MEND
+'''
+
+
+
+
+input:
+Enter number of macros to define: 1
+Enter macro header (e.g., MACRO MACRO_NAME &ARG1,&ARG2): MACRO ADD &A,&B
+Enter macro body line by line (use 'MEND' to end):
+MOV &A, R1
+ADD &B, R1
+MEND
+
+
+
+outou:
+MNT (Macro Name Table):
+Name    MDT Index
+ADD     0
+
+MDT (Macro Definition Table):
+Index   Instruction
+0       MOV #0, R1
+1       ADD #1, R1
+2       MEND
+
+ALA (Argument List Array):
+#0      &A
+#1      &B
+
+
+
+
+
+
+
 
